@@ -1,0 +1,111 @@
+local PATROL_POINTS = {
+    Vector3.new(80.87, 0.42, -36.25),
+    Vector3.new(95.24, 0.42, 84.61),
+    Vector3.new(-118.13, 0.05, 106.55),
+    Vector3.new(-83.54, 0.00, -26.32),
+}
+
+local JUMP_PERIOD = 5
+local ROLL_PERIOD = 30
+local CHAT_PERIOD = 180
+local CHAT_MESSAGES = {
+    "Hi! Bạn tên gì trong đời thật? Mình tên là [Tên bạn]!",
+    "Bạn chơi game này lâu chưa? Mình mới chơi á 😅",
+    "Có muốn lập team cùng mình không?",
+    "Bạn có Discord không? Kết bạn nói chuyện cho tiện!",
+    "Skin bạn đẹp quá! Bạn làm sao có được thế?",
+    "Chơi vui vẻ nha mọi người!",
+    "Cẩn thận nha, đoạn này khó á!",
+    "Mình lag xíu, đợi mình với 😅",
+    "Có ai chỉ mình cách chơi đoạn này không?",
+    "Lát mình thoát nha, mai gặp lại nhé! Add friend mình nha!",
+}
+
+
+local EGG_REMOTE_PATH = { "Network", "Eggs_Roll" }
+local EGG_ROLL_ARGUMENTS = nil
+
+local Players = game:GetService("Players")
+local PathfindingService = game:GetService("PathfindingService")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local channel = TextChatService:FindFirstChild("TextChannels")
+              and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+
+if channel then
+    task.spawn(function()
+        while true do
+            task.wait(CHAT_PERIOD)
+            local msg = CHAT_MESSAGES[math.random(#CHAT_MESSAGES)]
+            pcall(function() channel:SendAsync(msg) end)
+        end
+    end)
+end
+local function startEggRolling()
+    local remote = ReplicatedStorage
+    for _, name in ipairs(EGG_REMOTE_PATH) do
+        remote = remote:FindFirstChild(name)
+        if not remote then
+            warn("[EggRoll] Không tìm thấy:", name)
+            return
+        end
+    end
+
+    task.spawn(function()
+        while true do
+            task.wait(ROLL_PERIOD)
+            pcall(function()
+                if EGG_ROLL_ARGUMENTS then
+                    remote:InvokeServer(table.unpack(EGG_ROLL_ARGUMENTS))
+                else
+                    remote:InvokeServer()
+                end
+            end)
+        end
+    end)
+end
+startEggRolling()
+local function setupCharacter(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    local rootPart = char:WaitForChild("HumanoidRootPart")
+
+    local function walkTo(target)
+        local path = PathfindingService:CreatePath{
+            AgentRadius = 2, AgentHeight = 5, AgentCanJump = true
+        }
+        path:ComputeAsync(rootPart.Position, target)
+        if path.Status ~= Enum.PathStatus.Success then return false end
+        local blocked = false
+        local conn = path.Blocked:Connect(function() blocked = true end)
+        for _, wp in ipairs(path:GetWaypoints()) do
+            if blocked then break end
+            humanoid:MoveTo(wp.Position)
+            if wp.Action == Enum.PathWaypointAction.Jump then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+            if not humanoid.MoveToFinished:Wait() then break end
+        end
+        conn:Disconnect()
+    end
+
+    task.spawn(function()
+        while char.Parent do
+            task.wait(JUMP_PERIOD)
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end)
+
+    task.spawn(function()
+        local i = 1
+        while char.Parent do
+            walkTo(PATROL_POINTS[i])
+            i = (i % #PATROL_POINTS) + 1
+            task.wait(1)
+        end
+    end)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
+if player.Character then setupCharacter(player.Character) end
