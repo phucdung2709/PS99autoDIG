@@ -5,9 +5,10 @@ local PATROL_POINTS = {
     Vector3.new(-83.54, 0.00, -26.32),
 }
 
-local JUMP_PERIOD = 5
-local ROLL_PERIOD = 30
-local CHAT_PERIOD = 180
+local JUMP_PERIOD  = 5
+local CHAT_PERIOD  = 180
+local ROLL_PERIOD  = 30
+
 local CHAT_MESSAGES = {
     "Hi! Bạn tên gì trong đời thật? Mình tên là [Tên bạn]!",
     "Bạn chơi game này lâu chưa? Mình mới chơi á 😅",
@@ -19,40 +20,66 @@ local CHAT_MESSAGES = {
     "Mình lag xíu, đợi mình với 😅",
     "Có ai chỉ mình cách chơi đoạn này không?",
     "Lát mình thoát nha, mai gặp lại nhé! Add friend mình nha!",
+    "Bạn hay chơi game nào trên Roblox nữa không?",
+    "Bạn đến từ đâu vậy?",
+    "Mình thấy bạn chơi giỏi quá trời!",
+    "Làm sao để farm đồ nhanh vậy bạn?",
+    "Bạn có nhận trade không? Mình có vài món xịn lắm 😄",
+    "Wow, nhà bạn đẹp quá, bạn xây mất bao lâu?",
+    "Bạn có chơi Adopt Me không? Kết bạn mình chơi chung nhen!",
+    "Game này vui thật, bạn có chơi mỗi ngày không?",
+    "Cho mình follow bạn nha!",
+    "Bạn có nhóm nào để vào không? Cho mình join với!",
+    "Ủa bạn có phải YouTuber không? Nick quen quen á!",
+    "Bạn biết cách nào kiếm Robux free không 😅?",
+    "Có cách nào lên level nhanh không bạn?",
+    "Bạn có mấy pet legendary rồi?",
+    "Bạn biết code nào mới cho game này không?",
+    "Ủa sao bạn chạy nhanh dữ vậy? Hack hả? 😂",
+    "Bạn chơi game này từ năm nào rồi?",
+    "Mình bị kẹt, giúp mình với 😭",
+    "Bạn có biết server nào ít lag không?",
+    "Đội bạn đông quá, win chắc luôn!",
+    "Chơi với bạn vui ghê á!",
+    "Tí nữa bạn còn chơi nữa không?",
+    "Bạn add friend mình nha, mai chơi tiếp!",
+    "Bạn có biết cách lấy skin đó không?",
+    "Mình mới đổi outfit nè, đẹp không? 😆",
+    "Lúc nãy bạn gánh team quá đỉnh!",
+    "Mình thua hoài luôn á, có mẹo gì không bạn?",
+    "Bạn dùng device gì chơi vậy? PC hay điện thoại?",
+    "Mình sắp rớt mạng rồi 😭",
+    "Hôm nay chơi vui quá, cảm ơn bạn nha!",
 }
 
-
-local EGG_REMOTE_PATH = { "Network", "Eggs_Roll" }
+local EGG_REMOTE_PATH   = { "Network", "Eggs_Roll" }
 local EGG_ROLL_ARGUMENTS = nil
 
-local Players = game:GetService("Players")
+local Players            = game:GetService("Players")
 local PathfindingService = game:GetService("PathfindingService")
-local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextChatService    = game:GetService("TextChatService")
+local ReplicatedStorage  = game:GetService("ReplicatedStorage")
 
-local player = Players.LocalPlayer
+local player  = Players.LocalPlayer
 local channel = TextChatService:FindFirstChild("TextChannels")
               and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
 
 if channel then
     task.spawn(function()
+        local i = 1
         while true do
             task.wait(CHAT_PERIOD)
-            local msg = CHAT_MESSAGES[math.random(#CHAT_MESSAGES)]
-            pcall(function() channel:SendAsync(msg) end)
+            pcall(function() channel:SendAsync(CHAT_MESSAGES[i]) end)
+            i = (i % #CHAT_MESSAGES) + 1
         end
     end)
 end
+
 local function startEggRolling()
     local remote = ReplicatedStorage
     for _, name in ipairs(EGG_REMOTE_PATH) do
-        remote = remote:FindFirstChild(name)
-        if not remote then
-            warn("[EggRoll] Không tìm thấy:", name)
-            return
-        end
+        remote = remote:WaitForChild(name)
     end
-
     task.spawn(function()
         while true do
             task.wait(ROLL_PERIOD)
@@ -67,16 +94,19 @@ local function startEggRolling()
     end)
 end
 startEggRolling()
+
 local function setupCharacter(char)
     local humanoid = char:WaitForChild("Humanoid")
     local rootPart = char:WaitForChild("HumanoidRootPart")
 
     local function walkTo(target)
         local path = PathfindingService:CreatePath{
-            AgentRadius = 2, AgentHeight = 5, AgentCanJump = true
+            AgentRadius = 2,
+            AgentHeight = 5,
+            AgentCanJump = true,
         }
         path:ComputeAsync(rootPart.Position, target)
-        if path.Status ~= Enum.PathStatus.Success then return false end
+        if path.Status ~= Enum.PathStatus.Success then return end
         local blocked = false
         local conn = path.Blocked:Connect(function() blocked = true end)
         for _, wp in ipairs(path:GetWaypoints()) do
@@ -98,10 +128,10 @@ local function setupCharacter(char)
     end)
 
     task.spawn(function()
-        local i = 1
+        local idx = 1
         while char.Parent do
-            walkTo(PATROL_POINTS[i])
-            i = (i % #PATROL_POINTS) + 1
+            walkTo(PATROL_POINTS[idx])
+            idx = (idx % #PATROL_POINTS) + 1
             task.wait(1)
         end
     end)
