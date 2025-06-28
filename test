@@ -6,7 +6,7 @@ local PATROL_POINTS = {
 }
 
 local JUMP_DELAY = 5
-local CHAT_DELAY = 180
+local CHAT_DELAY = 600
 local ROLL_DELAY = 30
 
 local CHAT_MESSAGES = {
