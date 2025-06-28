@@ -58,18 +58,28 @@ local Players            = game:GetService("Players")
 local PathfindingService = game:GetService("PathfindingService")
 local TextChatService    = game:GetService("TextChatService")
 local ReplicatedStorage  = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local player  = Players.LocalPlayer
 local channel = TextChatService:FindFirstChild("TextChannels")
               and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-
 
 local function safeWait(t)
     if typeof(t) == "NumberRange" then t = t.Min end
     task.wait(t)
 end
 
+-- 💤 ANTI-AFK: nhấn phím L mỗi 60 giây
+task.spawn(function()
+    while true do
+        safeWait(60)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.L, false, game)
+        safeWait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.L, false, game)
+    end
+end)
 
+-- 💬 Chat tự động
 if channel then
     task.spawn(function()
         local i = 1
@@ -81,7 +91,7 @@ if channel then
     end)
 end
 
-
+-- 🥚 Roll Egg tự động
 local function startEggRolling()
     local remote = ReplicatedStorage
     for _, name in ipairs(EGG_REMOTE_PATH) do
@@ -102,6 +112,7 @@ local function startEggRolling()
 end
 startEggRolling()
 
+-- 🧭 Tuần tra + Nhảy
 local function setupCharacter(char)
     local humanoid = char:WaitForChild("Humanoid")
     local rootPart = char:WaitForChild("HumanoidRootPart")
