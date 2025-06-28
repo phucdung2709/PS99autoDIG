@@ -5,9 +5,9 @@ local PATROL_POINTS = {
     Vector3.new(-83.54, 0.00, -26.32),
 }
 
-local JUMP_PERIOD = 5
-local CHAT_PERIOD = 180
-local ROLL_PERIOD = 30
+local JUMP_DELAY = 5
+local CHAT_DELAY = 180
+local ROLL_DELAY = 30
 
 local CHAT_MESSAGES = {
     "Bạn chơi game này lâu chưa? Mình mới chơi á ",
@@ -51,8 +51,8 @@ local CHAT_MESSAGES = {
     "Hôm nay chơi vui quá, cảm ơn bạn nha!",
 }
 
-local EGG_REMOTE_PATH    = { "Network", "Eggs_Roll" }
-local EGG_ROLL_ARGUMENTS = nil
+local EGG_REMOTE_PATH = { "Network", "Eggs_Roll" }
+local EGG_ARGS = nil
 
 local Players            = game:GetService("Players")
 local PathfindingService = game:GetService("PathfindingService")
@@ -63,29 +63,25 @@ local player  = Players.LocalPlayer
 local channel = TextChatService:FindFirstChild("TextChannels")
               and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
 
--- Hàm chờ an toàn chống lỗi NumberRange
+-- Hàm chờ an toàn
 local function safeWait(t)
-    if typeof(t) == "NumberRange" then
-        t = t.Min
-    end
+    if typeof(t) == "NumberRange" then t = t.Min end
     task.wait(t)
 end
 
--- Auto Chat
+-- 🗨️ Chat tự động (gửi ngay lập tức, sau đó lặp 3 phút)
 if channel then
     task.spawn(function()
         local i = 1
         while true do
-            pcall(function()
-                channel:SendAsync(CHAT_MESSAGES[i])
-            end)
+            pcall(function() channel:SendAsync(CHAT_MESSAGES[i]) end)
             i = (i % #CHAT_MESSAGES) + 1
-            safeWait(CHAT_PERIOD)
+            safeWait(CHAT_DELAY)
         end
     end)
 end
 
--- Auto Roll Egg
+-- 🥚 Tự động roll egg (roll ngay lập tức, sau đó mỗi 30s)
 local function startEggRolling()
     local remote = ReplicatedStorage
     for _, name in ipairs(EGG_REMOTE_PATH) do
@@ -94,19 +90,19 @@ local function startEggRolling()
     task.spawn(function()
         while true do
             pcall(function()
-                if EGG_ROLL_ARGUMENTS then
-                    remote:InvokeServer(table.unpack(EGG_ROLL_ARGUMENTS))
+                if EGG_ARGS then
+                    remote:InvokeServer(table.unpack(EGG_ARGS))
                 else
                     remote:InvokeServer()
                 end
             end)
-            safeWait(ROLL_PERIOD)
+            safeWait(ROLL_DELAY)
         end
     end)
 end
 startEggRolling()
 
--- Setup Tuần Tra và Nhảy
+-- 🧠 Thiết lập tuần tra + nhảy cho nhân vật
 local function setupCharacter(char)
     local humanoid = char:WaitForChild("Humanoid")
     local rootPart = char:WaitForChild("HumanoidRootPart")
@@ -135,22 +131,20 @@ local function setupCharacter(char)
 
     task.spawn(function()
         while char.Parent do
-            safeWait(JUMP_PERIOD)
+            safeWait(JUMP_DELAY)
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end)
 
     task.spawn(function()
-        local i = 1
+        local idx = 1
         while char.Parent do
-            walkTo(PATROL_POINTS[i])
-            i = (i % #PATROL_POINTS) + 1
+            walkTo(PATROL_POINTS[idx])
+            idx = (idx % #PATROL_POINTS) + 1
             safeWait(1)
         end
     end)
 end
 
 player.CharacterAdded:Connect(setupCharacter)
-if player.Character then
-    setupCharacter(player.Character)
-end
+if player.Character then setupCharacter(player.Character) end
