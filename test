@@ -10,7 +10,6 @@ local CHAT_PERIOD = 180
 local ROLL_PERIOD = 30
 
 local CHAT_MESSAGES = {
-    "Hi! Bạn tên gì trong đời thật? Mình tên là [Tên bạn]!",
     "Bạn chơi game này lâu chưa? Mình mới chơi á ",
     "Có muốn lập team cùng mình không?",
     "Bạn có Discord không? Kết bạn nói chuyện cho tiện!",
