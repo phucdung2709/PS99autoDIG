@@ -5,9 +5,9 @@ local PATROL_POINTS = {
     Vector3.new(-83.54, 0.00, -26.32),
 }
 
-local JUMP_PERIOD  = 5
-local CHAT_PERIOD  = 180
-local ROLL_PERIOD  = 30
+local JUMP_PERIOD = 5
+local CHAT_PERIOD = 180
+local ROLL_PERIOD = 30
 
 local CHAT_MESSAGES = {
     "Hi! Bạn tên gì trong đời thật? Mình tên là [Tên bạn]!",
@@ -52,7 +52,7 @@ local CHAT_MESSAGES = {
     "Hôm nay chơi vui quá, cảm ơn bạn nha!",
 }
 
-local EGG_REMOTE_PATH   = { "Network", "Eggs_Roll" }
+local EGG_REMOTE_PATH    = { "Network", "Eggs_Roll" }
 local EGG_ROLL_ARGUMENTS = nil
 
 local Players            = game:GetService("Players")
@@ -64,17 +64,29 @@ local player  = Players.LocalPlayer
 local channel = TextChatService:FindFirstChild("TextChannels")
               and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
 
+-- Hàm chờ an toàn chống lỗi NumberRange
+local function safeWait(t)
+    if typeof(t) == "NumberRange" then
+        t = t.Min
+    end
+    task.wait(t)
+end
+
+-- Auto Chat
 if channel then
     task.spawn(function()
         local i = 1
         while true do
-            task.wait(CHAT_PERIOD)
-            pcall(function() channel:SendAsync(CHAT_MESSAGES[i]) end)
+            pcall(function()
+                channel:SendAsync(CHAT_MESSAGES[i])
+            end)
             i = (i % #CHAT_MESSAGES) + 1
+            safeWait(CHAT_PERIOD)
         end
     end)
 end
 
+-- Auto Roll Egg
 local function startEggRolling()
     local remote = ReplicatedStorage
     for _, name in ipairs(EGG_REMOTE_PATH) do
@@ -82,7 +94,6 @@ local function startEggRolling()
     end
     task.spawn(function()
         while true do
-            task.wait(ROLL_PERIOD)
             pcall(function()
                 if EGG_ROLL_ARGUMENTS then
                     remote:InvokeServer(table.unpack(EGG_ROLL_ARGUMENTS))
@@ -90,11 +101,13 @@ local function startEggRolling()
                     remote:InvokeServer()
                 end
             end)
+            safeWait(ROLL_PERIOD)
         end
     end)
 end
 startEggRolling()
 
+-- Setup Tuần Tra và Nhảy
 local function setupCharacter(char)
     local humanoid = char:WaitForChild("Humanoid")
     local rootPart = char:WaitForChild("HumanoidRootPart")
@@ -107,6 +120,7 @@ local function setupCharacter(char)
         }
         path:ComputeAsync(rootPart.Position, target)
         if path.Status ~= Enum.PathStatus.Success then return end
+
         local blocked = false
         local conn = path.Blocked:Connect(function() blocked = true end)
         for _, wp in ipairs(path:GetWaypoints()) do
@@ -122,20 +136,22 @@ local function setupCharacter(char)
 
     task.spawn(function()
         while char.Parent do
-            task.wait(JUMP_PERIOD)
+            safeWait(JUMP_PERIOD)
             humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end)
 
     task.spawn(function()
-        local idx = 1
+        local i = 1
         while char.Parent do
-            walkTo(PATROL_POINTS[idx])
-            idx = (idx % #PATROL_POINTS) + 1
-            task.wait(1)
+            walkTo(PATROL_POINTS[i])
+            i = (i % #PATROL_POINTS) + 1
+            safeWait(1)
         end
     end)
 end
 
 player.CharacterAdded:Connect(setupCharacter)
-if player.Character then setupCharacter(player.Character) end
+if player.Character then
+    setupCharacter(player.Character)
+end
