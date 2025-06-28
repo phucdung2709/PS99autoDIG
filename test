@@ -63,13 +63,13 @@ local player  = Players.LocalPlayer
 local channel = TextChatService:FindFirstChild("TextChannels")
               and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
 
--- Hàm chờ an toàn
+
 local function safeWait(t)
     if typeof(t) == "NumberRange" then t = t.Min end
     task.wait(t)
 end
 
--- 🗨️ Chat tự động (gửi ngay lập tức, sau đó lặp 3 phút)
+
 if channel then
     task.spawn(function()
         local i = 1
@@ -81,7 +81,7 @@ if channel then
     end)
 end
 
--- 🥚 Tự động roll egg (roll ngay lập tức, sau đó mỗi 30s)
+
 local function startEggRolling()
     local remote = ReplicatedStorage
     for _, name in ipairs(EGG_REMOTE_PATH) do
@@ -102,7 +102,6 @@ local function startEggRolling()
 end
 startEggRolling()
 
--- 🧠 Thiết lập tuần tra + nhảy cho nhân vật
 local function setupCharacter(char)
     local humanoid = char:WaitForChild("Humanoid")
     local rootPart = char:WaitForChild("HumanoidRootPart")
